@@ -2,9 +2,9 @@ clear; close all; tic;
 %% Analysis settings
 global figNumber; figNumber = 1;
 
-bodyName = "216_Kleopatra"; % Name of the body (by the input file)
-order_int = 5; % Gauss integration order;
-spacePoints = 100; % Points in space;
+bodyName = "216 Kleopatra"; % Name of the body (by the input file)
+order_int = 6; % Gauss integration order;
+spacePoints = 10; % Points in space;
 order_spacePoints = 2; % Order of polynomial spacing points;
 
 % Analysis name
@@ -13,7 +13,7 @@ analysisName = bodyName + "_n" + num2str(order_int) + "_p" + ...
     num2str(spacePoints) + "_o" + num2str(order_spacePoints);
 
 % Creates the directory if it doesn't exist
-figDir = pwd + "\fig\" + analysisName; checkDir(figDir);
+figDir = pwd + "\fig\Integration_" + analysisName; checkDir(figDir);
 varDir = pwd + "\var"; checkDir(varDir);
 
 %% Main calculations
@@ -24,6 +24,10 @@ fprintf('\nStarting potential integration analysis for %s body.\n', ...
 file = importdata(bodyName + ".txt");
 vertices = file.data(cell2mat(file.textdata)=='v',:);
 faces = file.data(cell2mat(file.textdata)=='f',:);
+
+disp('Analysis settings:')
+fprintf('\tFaces number: %d\n', length(body.faces));
+fprintf('\tVertices number: %d\n', length(body.vertices));
 
 % Evaluation points
 x = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
@@ -46,7 +50,7 @@ s = toc;
 fprintf('Code ended successfully.\n');
 fprintf('Total execution time: %dmin e %.2fs.\n', floor(s/60), ...
     s - floor(s/60)*60);
-save(varDir + "\" + analysisName, 'U', 'x', 'y', 'z', 'options', ...
+save(varDir + "\Integration_" + analysisName, 'U', 'x', 'y', 'z', 'options', ...
     'bodyName', 's');
 
 %% My functions
