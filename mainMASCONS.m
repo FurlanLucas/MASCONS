@@ -1,20 +1,25 @@
-clear; tic;
+clear; tic; close all;
 %% Analysis settings
-
-global figNumber; figNumber = 1;
+global figNumber G rho; 
+figNumber = 1;
 
 bodyName = "216 Kleopatra"; % Name of the body (by the input file)
-numberOfDivisions = 3; % Gauss integration order;
-spacePoints = 100; % Points in space;
+maxDist = 700; % [km] Maximum distance avaluation
+numberOfDivisions = 5; % Gauss integration order;
+spacePoints = 50; % Points in space;
 order_spacePoints = 2; % Order of polynomial spacing points;
+rho = 4.270e12; % [kg/km³] Mean body density;
+G = 6.67259e-20; % [km³/kg*s] Gravitational constant;
 
 % Analysis name
-analysisName = bodyName + "_d" + num2str(numberOfDivisions) + "_p" + ...
-    num2str(spacePoints) + "_o" + num2str(order_spacePoints);
+analysisName = bodyName + "_n" + num2str(numberOfDivisions) + "_p" + ...
+    num2str(spacePoints) + "_o" + num2str(order_spacePoints) + ...
+    "_m" + num2str(maxDist);
 
 % Creates the directory if it doesn't exist
-figDir = pwd + "\fig\MASCONS_" + analysisName; checkDir(figDir);
-varDir = pwd + "\var"; checkDir(varDir);
+figDir = pwd + "\results\MASCONS_" + analysisName + "\fig"; 
+varDir = pwd + "\results\MASCONS_" + analysisName; 
+checkDir(figDir);
 
 %% Main calculations
 fprintf('\nStating MASCONS analysis for %s body.\n', bodyName);
@@ -40,9 +45,9 @@ MSC = getMASCONS(faces, vertices, numberOfDivisions, figDir);
 fprintf('\tMASCONS number: %d\n', length(MSC.centers));
 
 % Points to be calculated the potencial
-x = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
-y = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
-z = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
+x = polySpaced(-maxDist, maxDist, 0, spacePoints, order_spacePoints);
+y = polySpaced(-maxDist, maxDist, 0, spacePoints, order_spacePoints);
+z = polySpaced(-maxDist, maxDist, 0, spacePoints, order_spacePoints);
 
 % Get the potential
 [U, a] = getPotencial(MSC, x, y, z);
@@ -59,7 +64,7 @@ s = toc;
 fprintf('Code ended successfully.\n');
 fprintf('Total execution time: %dmin e %.2fs.\n', floor(s/60), ...
     s - floor(s/60)*60);
-save(varDir + "\MASCONS_" + analysisName, 'U', 'a', 'x', 'y', 'z', ...
+save(varDir + "\var", 'U', 'a', 'x', 'y', 'z', ...
     'bodyName', 's');
 
 %% My functions
@@ -129,29 +134,42 @@ function [U, a] = getPotencial(MSC, X, Y, Z)
     % Function to get the total potential of the body at a poit (x, y, z).
     % If the points ar vectors, the potencial are evaluated at each point.
     
-    G = 6.67259e-20; % [m³/kg*s] Gravitational constant;
-    rho = 4270*1e9; % [kg/m³] Mean body density;
+    global G rho;
+    
     U = zeros(length(X), length(Y), length(Z));
-    a = cell(length(X), length(Y), length(Z));
+    ax = zeros(length(X), length(Y), length(Z));    
+    ay = zeros(length(X), length(Y), length(Z));    
+    az = zeros(length(X), length(Y), length(Z));
+    mass = rho*MSC.volume;
+    centers = MSC.centers;
+    
     fprintf('\n');
     % For loop through the inputs points
-    count = 1; total = length(X)*length(Y)*length(Z);
+    total = length(X)*length(Y); count = 0;
     for i = 1:length(X)
         for j = 1:length(Y)
-            for k = 1:length(Z)
+            
+            x = X(i); y = Y(j);
+            parfor k = 1:length(Z)         
                 % Potencial for each MASCONS divided by G, saved as vector
-                r = [X(i); Y(j); Z(k)] - MSC.centers;
-                Uu =  MSC.volume*rho ./ (sum(r.^2).^(1/2));
-                au = (MSC.volume*rho ./ (sum(r.^2).^(3/2)) ) .* r;
+                r = [x; y; Z(k)] - centers;
+                Uu =  mass ./ (sum(r.^2).^(1/2));
+                au = (mass ./ (sum(r.^2).^(3/2)) ) .* r;
 
                 % Total potencial (sum of each MASCONS potencial)
-                U(i, j, k) = -G*sum(Uu);
-                a{i, j, k} = G*sum(au, 2);
-                count = count + 1;
+                U(i, j, k) = -sum(Uu);
+                a = sum(au, 2);
+                ax(i, j, k) = a(1);
+                ay(i, j, k) = a(2);
+                az(i, j, k) = a(3);
             end
+            
+            count = count + 1;
         end
         fprintf("\t\tProgress: %4.2f %%\n", count*100/total);
-    end    
+    end
+    U = G*U;
+    a = {G*ax, G*ay, G*az};
 end
 
 function out = polySpaced(startP, endP, peakP, pointsNumber, exp)
