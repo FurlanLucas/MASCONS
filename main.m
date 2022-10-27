@@ -4,7 +4,7 @@ clear; tic;
 global figNumber; figNumber = 1;
 
 bodyName = "216 Kleopatra"; % Name of the body (by the input file)
-numberOfDivisions = 5; % Gauss integration order;
+numberOfDivisions = 3; % Gauss integration order;
 spacePoints = 100; % Points in space;
 order_spacePoints = 2; % Order of polynomial spacing points;
 
@@ -45,7 +45,7 @@ y = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
 z = polySpaced(-252, 252, 0, spacePoints, order_spacePoints);
 
 % Get the potential
-[U, ~] = getPotencial(MSC, x, y, z);
+[U, a] = getPotencial(MSC, x, y, z);
 
 % Plot potential data
 figure(figNumber);  [X, Y] = meshgrid(x, y);
@@ -59,7 +59,7 @@ s = toc;
 fprintf('Code ended successfully.\n');
 fprintf('Total execution time: %dmin e %.2fs.\n', floor(s/60), ...
     s - floor(s/60)*60);
-save(varDir + "\MASCONS_" + analysisName, 'U', 'x', 'y', 'z', ...
+save(varDir + "\MASCONS_" + analysisName, 'U', 'a', 'x', 'y', 'z', ...
     'bodyName', 's');
 
 %% My functions
@@ -81,7 +81,7 @@ function MSC = getMASCONS(faces, vertices, numberOfDivisions, figDir)
         MSC.centers = zeros(3, L);
         MSC.volume = zeros(1, L);
     
-    colors = ['r', 'b', 'g', 'y', 'm'];
+    colors = ['r', 'b', 'g', 'y', 'm', 'k', 'c'];
     figure(figNumber); hold on;
     
     % General calculations
@@ -125,14 +125,14 @@ function MSC = getMASCONS(faces, vertices, numberOfDivisions, figDir)
     
 end
 
-function [U, Ur] = getPotencial(MSC, X, Y, Z)
+function [U, a] = getPotencial(MSC, X, Y, Z)
     % Function to get the total potential of the body at a poit (x, y, z).
     % If the points ar vectors, the potencial are evaluated at each point.
     
     G = 6.67259e-20; % [m³/kg*s] Gravitational constant;
     rho = 4270*1e9; % [kg/m³] Mean body density;
     U = zeros(length(X), length(Y), length(Z));
-    Ur = zeros(length(X), length(Y), length(Z));
+    a = cell(length(X), length(Y), length(Z));
     fprintf('\n');
     % For loop through the inputs points
     count = 1; total = length(X)*length(Y)*length(Z);
@@ -140,13 +140,13 @@ function [U, Ur] = getPotencial(MSC, X, Y, Z)
         for j = 1:length(Y)
             for k = 1:length(Z)
                 % Potencial for each MASCONS divided by G, saved as vector
-                r = [X(i); Y(j); Z(k)];
-                Uu = MSC.volume*rho ./ sqrt(sum((MSC.centers - r).^2));
-                Uur = MSC.volume*rho ./ (sum((MSC.centers - r).^2));
+                r = [X(i); Y(j); Z(k)] - MSC.centers;
+                Uu =  MSC.volume*rho ./ (sum(r.^2).^(1/2));
+                au = (MSC.volume*rho ./ (sum(r.^2).^(3/2)) ) .* r;
 
                 % Total potencial (sum of each MASCONS potencial)
                 U(i, j, k) = -G*sum(Uu);
-                Ur(i, j, k) = G*sum(Uur);
+                a{i, j, k} = G*sum(au, 2);
                 count = count + 1;
             end
         end
