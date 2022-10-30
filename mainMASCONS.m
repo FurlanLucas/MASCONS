@@ -1,13 +1,13 @@
-clear; tic; close all;
+clear; close all; poolobj = parpool(); tic;
 %% Analysis settings
 global figNumber G rho; 
 figNumber = 1;
 
 bodyName = "216 Kleopatra"; % Name of the body (by the input file)
-maxDist = 700; % [km] Maximum distance avaluation
-numberOfDivisions = 5; % Gauss integration order;
-spacePoints = 50; % Points in space;
-order_spacePoints = 2; % Order of polynomial spacing points;
+maxDist = 4000; % [km] Maximum distance avaluation
+numberOfDivisions = 7; % Gauss integration order;
+spacePoints = 200; % Points in space;
+order_spacePoints = 3; % Order of polynomial spacing points;
 rho = 4.270e12; % [kg/km³] Mean body density;
 G = 6.67259e-20; % [km³/kg*s] Gravitational constant;
 
@@ -66,6 +66,7 @@ fprintf('Total execution time: %dmin e %.2fs.\n', floor(s/60), ...
     s - floor(s/60)*60);
 save(varDir + "\var", 'U', 'a', 'x', 'y', 'z', ...
     'bodyName', 's');
+delete(poolobj);
 
 %% My functions
 function MSC = getMASCONS(faces, vertices, numberOfDivisions, figDir)
