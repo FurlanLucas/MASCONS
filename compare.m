@@ -69,19 +69,26 @@ end
 G = 6.67259e-20; % [m³/kg*s] Gravitational constant;
 M = 2.97e18; % [kg/m³] Mean body density;
 plot(x, -G*M./x, '--k', 'LineWidth', 1.2, ...
-    'DisplayName', 'Aprox');
-grid minor; xlabel("X [km]"); ylabel("U"); legend();
+    'DisplayName', 'Aprox. for a mass point');
+grid minor; xlabel("X [km]"); ylabel("U"); legend('location','southeast');
+yLIM = ylim(); plot([105, 105], yLIM, '-.k', 'HandleVisibility', 'off');
+h=text(100, 0.7*(yLIM(2)-yLIM(1)) + yLIM(1),'Internal region');
+set(h,'Rotation',90);
 saveas(figure(figNumber), figDir + "\convIntegration.png");
-figNumber = figNumber + 1;
+figNumber = figNumber + 1; 
 
 % Convergence of integration method (error)
 figure(figNumber);
-for ii = 1:length(order_int)
-    plot(x, (Uint(:, ii) - Uint(:, end))*100./Uint(:, end), colors(ii), ...
-        'LineWidth', 1.2, 'DisplayName', "\alpha = \beta = \gamma = " + ...
-        num2str(order_int(ii))); hold on;
+for ii = 1:length(order_int)-1
+    plot(x, -abs(Uint(:, ii) - Uint(:, end))*100./Uint(:, end), ...
+        colors(ii), 'LineWidth', 1.2, 'DisplayName', ...
+        "\alpha = \beta = \gamma = " + num2str(order_int(ii))); hold on;
 end
-grid minor; xlabel("X [km]"); ylabel("Erro [%%]"); legend();
+grid minor; xlabel("X [km]"); ylabel("Erro [log(%)]"); 
+legend('location','east'); set(gca, 'YScale', 'log');
+yLIM = ylim(); plot([105, 105], yLIM, '-.k', 'HandleVisibility', 'off');
+h=text(100, 1e-11*(yLIM(2)-yLIM(1)) + yLIM(1),'Internal region');
+set(h,'Rotation',90); 
 saveas(figure(figNumber), figDir + "\convIntegrationError.png");
 figNumber = figNumber + 1;
 
@@ -89,29 +96,37 @@ figNumber = figNumber + 1;
 figure(figNumber);
 for ii = 1:length(numberOfDivisions)
     plot(x, Umas(:, ii), colors(ii), 'LineWidth', 1.2, 'DisplayName', ...
-        num2str(numberOfDivisions(ii)) + "divisions"); hold on;
+        num2str(numberOfDivisions(ii)) + " divisions"); hold on;
 end
 plot(x, -G*M./x, '--k', 'LineWidth', 1.2, ...
-    'DisplayName', 'Aprox');
-grid minor; xlabel("X [km]"); ylabel("U"); legend();
+    'DisplayName', 'Aprox. for a mass point');
+grid minor; xlabel("X [km]"); ylabel("U");  legend('location','southeast');
+yLIM = ylim(); plot([105, 105], yLIM, '-.k', 'HandleVisibility', 'off');
+h=text(100, 0.7*(yLIM(2)-yLIM(1)) + yLIM(1),'Internal region');
+set(h,'Rotation',90);
 saveas(figure(figNumber), figDir + "\convMASCONS.png");
 figNumber = figNumber + 1;
 
 % Convergence of MASCONS method (error)
 figure(figNumber);
 for ii = 1:length(numberOfDivisions)
-    plot(x, (Umas(:, ii) - Uint(:, end))*100./Uint(:, end), colors(ii), ...
-        'LineWidth', 1.2, 'DisplayName', ...
-        num2str(numberOfDivisions(ii)) + "divisions"); hold on;
+    plot(x, -abs(Umas(:, ii) - Uint(:, end))*100./Uint(:, end), ...
+        colors(ii), 'LineWidth', 1.2, 'DisplayName', ...
+        num2str(numberOfDivisions(ii)) + " divisions"); hold on;
 end
-grid minor; xlabel("X [km]"); ylabel("Erro [%%]"); legend();
+grid minor; xlabel("X [km]"); ylabel("Erro [log(%)]"); 
+legend('location','northeast'); set(gca, 'YScale', 'log');
+yLIM = ylim(); plot([105, 105], yLIM, '-.k', 'HandleVisibility', 'off');
+h=text(85, 1e-3*(yLIM(2)-yLIM(1)) + yLIM(1),'Internal region');
+set(h,'Rotation',90); 
 saveas(figure(figNumber), figDir + "\convMASCONSError.png");
 figNumber = figNumber + 1;
 
 %% Outs
 fprintf("Results: \n");
-fprintf("Biggest error value for the last MASCONS evaluation: %.2f", ...
+fprintf("Biggest error value for the last MASCONS evaluation: %.2f\n\n", ...
     max(abs((Umas(:, ii) - Uint(:, end))*100./Uint(:, end))));
+save(pwd+ "\var", 'Uint', 'Umas');
 
 %% My functions
 
